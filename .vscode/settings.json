@@ -1,0 +1,9 @@
+{
+    "files.eol": "\n",
+    "rust-analyzer.cargo.features": [
+        "all"
+    ],
+    "cSpell.words": [
+        "mylib"
+    ]
+}
