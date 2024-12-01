@@ -52,14 +52,14 @@ impl Day01Data {
 
 pub fn day_01() -> Result<()> {
     let input = include_str!("../../assets/day_01.txt");
-    let mut lists = Day01Data::from(input);
-    lists.sort();
+    let mut challenge = Day01Data::from(input);
+    challenge.sort();
 
-    let result_part1 = lists.add_up_delta();
+    let result_part1 = challenge.add_up_delta();
     println!("result day 01 part 1: {}", result_part1);
     assert_eq!(result_part1, 1_660_292);
 
-    let result_part2 = lists.calc_similarity_score();
+    let result_part2 = challenge.calc_similarity_score();
     println!("result day 01 part 2: {}", result_part2);
     assert_eq!(result_part2, 22_776_016);
 
@@ -74,14 +74,14 @@ mod tests {
     #[test]
     fn test_example_part() -> Result<()> {
         let input = include_str!("../../assets/day_01_example.txt");
-        let mut lists = Day01Data::from(input);
-        lists.sort();
+        let mut challenge = Day01Data::from(input);
+        challenge.sort();
 
-        let result_part1 = lists.add_up_delta();
+        let result_part1 = challenge.add_up_delta();
         println!("result day 01 part 1: {}", result_part1);
         assert_eq!(result_part1, 11);
 
-        let result_part2 = lists.calc_similarity_score();
+        let result_part2 = challenge.calc_similarity_score();
         println!("result day 01 part 2: {}", result_part2);
         assert_eq!(result_part2, 31);
 
