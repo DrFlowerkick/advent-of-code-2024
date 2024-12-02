@@ -4,7 +4,10 @@
         "all"
     ],
     "cSpell.words": [
-        "mylib"
+        "MSVC",
+        "mylib",
+        "rustc",
+        "rustup"
     ],
     "cSpell.ignorePaths": [
         ".git",
