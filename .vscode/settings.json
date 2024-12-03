@@ -5,9 +5,14 @@
     ],
     "cSpell.words": [
         "MSVC",
+        "mulwhat",
+        "mulwhen",
+        "mulwhere",
+        "mulwhy",
         "mylib",
         "rustc",
-        "rustup"
+        "rustup",
+        "xmul"
     ],
     "cSpell.ignorePaths": [
         ".git",
