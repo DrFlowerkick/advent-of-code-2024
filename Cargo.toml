@@ -14,3 +14,4 @@ all = ["short-run-time", "long-run-time"]
 [dependencies]
 anyhow = "1.0.79"
 my_lib = { path = "../mylib" }
+regex = "1.11.1"
