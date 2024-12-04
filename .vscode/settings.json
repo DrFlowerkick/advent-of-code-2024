@@ -4,6 +4,8 @@
         "all"
     ],
     "cSpell.words": [
+        "MMSS",
+        "MSSM",
         "MSVC",
         "mulwhat",
         "mulwhen",
@@ -12,11 +14,14 @@
         "mylib",
         "rustc",
         "rustup",
+        "SMMS",
+        "SSMM",
         "xmul"
     ],
     "cSpell.ignorePaths": [
         ".git",
         "**/.cargo/**",
-        "**/.rustup/**"
+        "**/.rustup/**",
+        "day_04_example.txt"
     ],
 }
