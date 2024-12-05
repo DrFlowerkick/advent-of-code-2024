@@ -22,6 +22,7 @@
         ".git",
         "**/.cargo/**",
         "**/.rustup/**",
-        "day_04_example.txt"
+        "day_04_example.txt",
+        "**/mylib/**"
     ],
 }
