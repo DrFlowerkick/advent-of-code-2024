@@ -1,6 +1,7 @@
 //!day_05.rs
 
 use anyhow::Result;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -38,29 +39,59 @@ impl From<&str> for Day05Data {
 impl Day05Data {
     fn add_middle_numbers_of_correct_order_updates(&self) -> u32 {
         let mut sum_middle_numbers = 0;
-        'outer: for update in self.updates.iter() {
+        for update in self.updates.iter() {
             // len of update should be odd
             assert!(update.len() & 1 == 1);
-            for (index, page) in update.iter().enumerate() {
-                // check if any number right of left does not comply to order rules
-                if update[index + 1..update.len()]
-                    .iter()
-                    .map(|right_of_left| match self.rules.get(page) {
-                        Some(left_order_items) => {
-                            left_order_items.iter().any(|loi| loi == right_of_left)
-                        }
-                        None => false,
-                    })
-                    .any(|c| !c)
-                {
-                    // skip current update and move on to next one
-                    continue 'outer;
-                }
+            if !update.is_sorted_by(|a, b| self.less(a, b)) {
+                // skip current update and move on to next one
+                continue;
             }
-            // all checks are true -> get middle number and sum it up
             sum_middle_numbers += update[update.len() / 2];
         }
         sum_middle_numbers
+    }
+
+    fn add_middle_numbers_of_incorrect_order_updates(&self) -> u32 {
+        let mut sum_middle_numbers = 0;
+        for update in self.updates.iter() {
+            // len of update should be odd
+            assert!(update.len() & 1 == 1);
+            if update.is_sorted_by(|a, b| self.less(a, b)) {
+                // skip current update and move on to next one
+                continue;
+            }
+            // first sort update
+            let mut sorted = update.clone();
+            sorted.sort_by(|a, b| self.compare(a, b));
+            sum_middle_numbers += sorted[sorted.len() / 2];
+        }
+        sum_middle_numbers
+    }
+
+    fn less(&self, left: &u32, right: &u32) -> bool {
+        match self.compare(left, right) {
+            Ordering::Equal => panic!("update should not contain equal numbers."),
+            Ordering::Less => true,
+            Ordering::Greater => false,
+        }
+    }
+
+    fn compare(&self, left: &u32, right: &u32) -> Ordering {
+        if left == right {
+            return Ordering::Equal;
+        }
+        match self.rules.get(left) {
+            Some(left_order_items) => {
+                if left_order_items.iter().any(|loi| loi == right) {
+                    // Less -> left is left of right
+                    Ordering::Less
+                } else {
+                    // Greater -> left should be right of right
+                    Ordering::Greater
+                }
+            }
+            None => Ordering::Greater, // Greater -> left should be right of right
+        }
     }
 }
 
@@ -71,11 +102,11 @@ pub fn day_05() -> Result<()> {
     let result_part1 = challenge.add_middle_numbers_of_correct_order_updates();
     println!("result day 05 part 1: {}", result_part1);
     assert_eq!(result_part1, 5_732);
-    /*
-    let result_part2 = challenge
+
+    let result_part2 = challenge.add_middle_numbers_of_incorrect_order_updates();
     println!("result day 05 part 2: {}", result_part2);
-    assert_eq!(result_part2, XXX);
-    */
+    assert_eq!(result_part2, 4_716);
+
     Ok(())
 }
 
@@ -92,11 +123,11 @@ mod tests {
         let result_part1 = challenge.add_middle_numbers_of_correct_order_updates();
         println!("result day 05 part 1: {}", result_part1);
         assert_eq!(result_part1, 143);
-        /*
-        let result_part2 = challenge
+
+        let result_part2 = challenge.add_middle_numbers_of_incorrect_order_updates();
         println!("result day 05 part 2: {}", result_part2);
-        assert_eq!(result_part2, XXX);
-        */
+        assert_eq!(result_part2, 123);
+
         Ok(())
     }
 }
