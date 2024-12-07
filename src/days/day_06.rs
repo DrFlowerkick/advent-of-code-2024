@@ -1,11 +1,10 @@
 //!day_06.rs
 
+#[cfg(feature = "long-run-time")]
+use crate::utilities::SnapshotHashSet;
 use anyhow::Result;
 use my_lib::{my_compass::Compass, my_map_point::MapPoint, my_map_two_dim::MyMap2D};
 use std::collections::HashSet;
-#[cfg(feature = "long-run-time")]
-use crate::utilities::SnapshotHashSet;
-
 
 struct IterMap<'a, const N: usize> {
     map: &'a MyMap2D<char, N, N>,
@@ -65,7 +64,8 @@ impl<const N: usize> Day06Data<N> {
 
     #[cfg(feature = "long-run-time")]
     fn count_possible_loop_blocks(&self) -> usize {
-        let mut visited_tiles: SnapshotHashSet<(MapPoint<N, N>, Compass)> = SnapshotHashSet::with_capacity(N);
+        let mut visited_tiles: SnapshotHashSet<(MapPoint<N, N>, Compass)> =
+            SnapshotHashSet::with_capacity(N);
         let mut blocked_tiles: HashSet<MapPoint<N, N>> = HashSet::with_capacity(N);
         // insert start_tile to prevent it from being blocked during for loop
         blocked_tiles.insert(self.start_tile);
@@ -115,7 +115,6 @@ pub fn day_06() -> Result<()> {
     println!("result day 06 part 1: {}", result_part1);
     assert_eq!(result_part1, 4_826);
 
-    
     #[cfg(feature = "long-run-time")]
     {
         let result_part2 = challenge.count_possible_loop_blocks();
