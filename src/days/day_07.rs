@@ -1,4 +1,4 @@
-//!day_01.rs
+//!day_07.rs
 
 use crate::utilities::digit_count;
 use anyhow::Result;
