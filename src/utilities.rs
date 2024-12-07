@@ -29,3 +29,15 @@ impl<T: std::hash::Hash + Eq + Clone> SnapshotHashSet<T> {
         }
     }
 }
+
+pub fn digit_count(mut num: u128) -> u32 {
+    let mut count = 1;
+    loop {
+        num /= 10;
+        if num == 0 {
+            break;
+        }
+        count += 1;
+    }
+    count
+}
