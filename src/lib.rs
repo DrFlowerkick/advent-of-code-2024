@@ -1,6 +1,7 @@
 //!lib.rs
 
 pub mod days;
+pub mod utilities;
 
 use anyhow::Result;
 

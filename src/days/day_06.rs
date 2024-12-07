@@ -3,34 +3,8 @@
 use anyhow::Result;
 use my_lib::{my_compass::Compass, my_map_point::MapPoint, my_map_two_dim::MyMap2D};
 use std::collections::HashSet;
-
-struct SnapshotHashSet<T, const N: usize> {
-    set: HashSet<T>,
-    baseline: Option<HashSet<T>>,
-}
-
-impl<T: std::hash::Hash + Eq + Clone, const N: usize> SnapshotHashSet<T, N> {
-    fn new() -> Self {
-        Self {
-            set: HashSet::with_capacity(N),
-            baseline: None,
-        }
-    }
-
-    fn insert(&mut self, value: T) -> bool {
-        self.set.insert(value)
-    }
-
-    fn set_baseline(&mut self) {
-        self.baseline = Some(self.set.clone());
-    }
-
-    fn reset_to_baseline(&mut self) {
-        if let Some(baseline) = self.baseline.take() {
-            self.set = baseline;
-        }
-    }
-}
+#[cfg(feature = "long-run-time")]
+use crate::utilities::SnapshotHashSet;
 
 
 struct IterMap<'a, const N: usize> {
@@ -89,27 +63,28 @@ impl<const N: usize> Day06Data<N> {
         visited_tiles.len()
     }
 
-    fn count_possible_loop_blocks(&mut self) -> usize {
-        let mut visited_tiles: SnapshotHashSet<(MapPoint<N, N>, Compass), N> = SnapshotHashSet::new();
+    #[cfg(feature = "long-run-time")]
+    fn count_possible_loop_blocks(&self) -> usize {
+        let mut visited_tiles: SnapshotHashSet<(MapPoint<N, N>, Compass)> = SnapshotHashSet::with_capacity(N);
         let mut blocked_tiles: HashSet<MapPoint<N, N>> = HashSet::with_capacity(N);
         // insert start_tile to prevent it from being blocked during for loop
         blocked_tiles.insert(self.start_tile);
         // copy map, since borrow checker would prevent changing values of it.
-        let map = self.map;
+        let mut map = self.map;
         let mut current_tile = self.start_tile;
         let mut current_direction = Compass::N;
-        let iter_map = IterMap::new(&map, current_tile, current_direction);
+        let iter_map = IterMap::new(&self.map, current_tile, current_direction);
         let mut loop_blocks = 0;
         for (next_tile, next_direction) in iter_map {
             visited_tiles.insert((current_tile, current_direction));
             // block next tile in path (if not blocked yet) and check if it results in a loop
             if blocked_tiles.insert(next_tile) {
                 // block next_tile
-                let next_tile_value = self.map.swap_value(next_tile, '#');
+                let next_tile_value = map.swap_value(next_tile, '#');
                 // use a second visited cache for checking, because otherwise it would be filled with visits
                 // from map states, which do not exist anymore
                 visited_tiles.set_baseline();
-                let check_loop_iter = IterMap::new(&self.map, current_tile, current_direction);
+                let check_loop_iter = IterMap::new(&map, current_tile, current_direction);
                 for (check_tile, check_direction) in check_loop_iter {
                     if !visited_tiles.insert((check_tile, check_direction)) {
                         // new loop
@@ -119,7 +94,7 @@ impl<const N: usize> Day06Data<N> {
                 }
                 visited_tiles.reset_to_baseline();
                 // unblock next_tile
-                self.map.set(next_tile, next_tile_value);
+                map.set(next_tile, next_tile_value);
             }
             current_tile = next_tile;
             current_direction = next_direction;
@@ -134,15 +109,23 @@ const N: usize = 130;
 pub fn day_06() -> Result<()> {
     println!("Happy Nikolaus!");
     let input = include_str!("../../assets/day_06.txt");
-    let mut challenge = Day06Data::<N>::from(input);
+    let challenge = Day06Data::<N>::from(input);
 
     let result_part1 = challenge.count_visited_map_tiles();
     println!("result day 06 part 1: {}", result_part1);
     assert_eq!(result_part1, 4_826);
 
-    let result_part2 = challenge.count_possible_loop_blocks();
-    println!("result day 06 part 2: {}", result_part2);
-    assert_eq!(result_part2, 1_721);
+    
+    #[cfg(feature = "long-run-time")]
+    {
+        let result_part2 = challenge.count_possible_loop_blocks();
+        println!("result day 06 part 2: {}", result_part2);
+        assert_eq!(result_part2, 1_721);
+    }
+    #[cfg(not(feature = "long-run-time"))]
+    {
+        println!("day 06 part 2 skipped because of long run time")
+    }
 
     Ok(())
 }
@@ -157,7 +140,7 @@ mod tests {
     #[test]
     fn test_example_part() -> Result<()> {
         let input = include_str!("../../assets/day_06_example.txt");
-        let mut challenge = Day06Data::<E>::from(input);
+        let challenge = Day06Data::<E>::from(input);
 
         let result_part1 = challenge.count_visited_map_tiles();
         println!("result day 06 part 1: {}", result_part1);
