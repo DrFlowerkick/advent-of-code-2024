@@ -1,6 +1,7 @@
 //!lib.rs
 
 pub mod days;
+pub mod utilities;
 
 use anyhow::Result;
 
@@ -11,5 +12,6 @@ pub fn run() -> Result<()> {
     days::day_04::day_04()?;
     days::day_05::day_05()?;
     days::day_06::day_06()?;
+    days::day_07::day_07()?;
     Ok(())
 }
