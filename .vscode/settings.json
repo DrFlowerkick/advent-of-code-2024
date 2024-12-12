@@ -25,6 +25,8 @@
         "**/.cargo/**",
         "**/.rustup/**",
         "day_04_example.txt",
-        "**/mylib/**"
+        "**/mylib/**",
+        "day_12_example_01.txt",
+        "day_12_example_02.txt"
     ],
 }
