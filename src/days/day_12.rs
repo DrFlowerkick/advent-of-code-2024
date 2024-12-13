@@ -103,25 +103,21 @@ impl<const N: usize> Day12Data<N> {
             // check corners
             let corners = [Compass::NE, Compass::SE, Compass::SW, Compass::NW];
             for (corner, orientation) in corners.iter().map(|c| (current_tile.neighbor(*c), c)) {
-                let free_corner = match corner {
-                    Some(corner_tile) => self.garden.get(corner_tile) != region,
-                    None => true,
-                };
+                let left = free_neighbors.contains(&orientation.counterclockwise());
+                let right = free_neighbors.contains(&orientation.clockwise());
 
-                if free_corner {
-                    let left = free_neighbors.contains(&orientation.counterclockwise());
-                    let right = free_neighbors.contains(&orientation.clockwise());
-                    // either both sides of corner are free or not free
-                    if !(left ^ right) {
-                        sides += 1;
+                if left && right {
+                    // both sides of corner are free, therefore it is a "outside" corner or "connecting" corner
+                    sides += 1;
+                } else if !left
+                    && !right
+                    // both sides of corner are region tiles. If corner tile is free, it is a "inside" corner
+                    && match corner {
+                        Some(corner_tile) => self.garden.get(corner_tile) != region,
+                        None => true,
                     }
-                } else {
-                    // check connecting corners
-                    let left = free_neighbors.contains(&orientation.counterclockwise());
-                    let right = free_neighbors.contains(&orientation.clockwise());
-                    if left && right {
-                        sides += 1;
-                    }
+                {
+                    sides += 1;
                 }
             }
         }
