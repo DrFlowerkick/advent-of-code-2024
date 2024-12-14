@@ -80,9 +80,10 @@ impl<const N: usize> Day06Data<N> {
             // block next tile in path (if not blocked yet) and check if it results in a loop
             if blocked_tiles.insert(next_tile) {
                 // block next_tile
-                let next_tile_value = map.swap_value(next_tile, '#');
-                // use a second visited cache for checking, because otherwise it would be filled with visits
-                // from map states, which do not exist anymore
+                map.set(next_tile, '#');
+                // set baseline of visited tiles. Without baseline it would be filled with visits
+                // from map states, which do not exist anymore for the following cycles with other
+                // blocked tiles. With baseline we can reset to clean state of visited tiles.
                 visited_tiles.set_baseline();
                 let check_loop_iter = IterMap::new(&map, current_tile, current_direction);
                 for (check_tile, check_direction) in check_loop_iter {
@@ -94,7 +95,7 @@ impl<const N: usize> Day06Data<N> {
                 }
                 visited_tiles.reset_to_baseline();
                 // unblock next_tile
-                map.set(next_tile, next_tile_value);
+                map.set(next_tile, '.');
             }
             current_tile = next_tile;
             current_direction = next_direction;
