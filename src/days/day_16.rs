@@ -98,11 +98,9 @@ impl<const N: usize> Day16Data<N> {
                     .map(move |nd| (n, nd))
                 })
                 .filter_map(|(n, d)| score_cache.get(&(n, d)).map(|(csc, cst)| (n, csc, cst)))
+                .filter(|(_, csc, cst)| **cst == steps - 1 && **csc < score)
             {
-                // check cached values
-                if *cached_steps == steps - 1 && *cached_score < score {
-                    visit_backwards.push_back((neighbor, *cached_score, *cached_steps));
-                }
+                visit_backwards.push_back((neighbor, *cached_score, *cached_steps));
             }
         }
         (min_score, best_path_tiles.len())
