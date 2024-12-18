@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use my_lib::{my_compass::Compass, my_map_point::MapPoint};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{hash_map::Entry, HashMap, VecDeque};
 
 #[derive(Debug)]
 struct Day18Data<const N: usize> {
@@ -29,7 +29,10 @@ impl<const N: usize> From<&str> for Day18Data<N> {
 impl<const N: usize> Day18Data<N> {
     fn shortest_path(&self, n_bytes: usize) -> Option<(usize, HashMap<MapPoint<N, N>, usize>)> {
         let mut min_steps: Option<usize> = None;
-        let mut seen: HashMap<MapPoint<N, N>, usize> = self.bytes[..n_bytes].iter().map(|b| (*b, usize::MAX)).collect();
+        let mut seen: HashMap<MapPoint<N, N>, usize> = self.bytes[..n_bytes]
+            .iter()
+            .map(|b| (*b, usize::MAX))
+            .collect();
         let mut visit: VecDeque<(MapPoint<N, N>, usize)> = VecDeque::new();
         seen.insert(self.start, 0);
         visit.push_back((self.start, 0));
@@ -42,8 +45,8 @@ impl<const N: usize> Day18Data<N> {
                 .iter()
                 .filter_map(|d| byte.neighbor(*d))
             {
-                if !seen.contains_key(&neighbor) {
-                    seen.insert(neighbor, steps + 1);
+                if let Entry::Vacant(e) = seen.entry(neighbor) {
+                    e.insert(steps + 1);
                     visit.push_back((neighbor, steps + 1));
                 }
             }
@@ -67,10 +70,10 @@ impl<const N: usize> Day18Data<N> {
                             .filter_map(|d| byte.neighbor(*d))
                         {
                             if let Some(ns) = seen.get(&neighbor) {
-                                if *ns == steps - 1 {
-                                    if best_path.insert(neighbor, steps - 1).is_none() {
-                                        visit.push_back((neighbor, steps - 1));
-                                    }
+                                if *ns == steps - 1
+                                    && best_path.insert(neighbor, steps - 1).is_none()
+                                {
+                                    visit.push_back((neighbor, steps - 1));
                                 }
                             }
                         }
@@ -104,11 +107,15 @@ pub fn day_18() -> Result<()> {
     let (result_part1, _) = challenge.shortest_path(1024).unwrap();
     println!("result day 18 part 1: {}", result_part1);
     assert_eq!(result_part1, 506);
-    
+
     let result_part2 = challenge.first_block(1024);
-    println!("result day 18 part 2: {},{}", result_part2.x(), result_part2.y());
+    println!(
+        "result day 18 part 2: {},{}",
+        result_part2.x(),
+        result_part2.y()
+    );
     assert_eq!(result_part2, (62, 6).into());
-    
+
     Ok(())
 }
 
@@ -127,11 +134,11 @@ mod tests {
         let (result_part1, _) = challenge.shortest_path(12).unwrap();
         println!("result day 18 part 1: {}", result_part1);
         assert_eq!(result_part1, 22);
-        
+
         let result_part2 = challenge.first_block(12);
         println!("result day 18 part 2: {}", result_part2);
         assert_eq!(result_part2, (6, 1).into());
-        
+
         Ok(())
     }
 }

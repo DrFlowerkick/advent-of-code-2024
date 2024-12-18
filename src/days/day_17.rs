@@ -206,12 +206,7 @@ impl Day17Data {
             panic!("No Solution!");
         }
     }
-    fn recursive_solver(
-        &self,
-        index: usize,
-        a: u128,
-        mut min_a: u128,
-    ) -> Option<u128> {
+    fn recursive_solver(&self, index: usize, a: u128, mut min_a: u128) -> Option<u128> {
         let out = self.part_2[index];
         let new_a = a << 3;
         let mut is_solved = false;
@@ -228,8 +223,7 @@ impl Day17Data {
                         is_solved = true;
                         min_a = new_a;
                     }
-                } else if let Some(final_a) = self.recursive_solver(index - 1, new_a, min_a)
-                {
+                } else if let Some(final_a) = self.recursive_solver(index - 1, new_a, min_a) {
                     if final_a < min_a {
                         is_solved = true;
                         min_a = final_a;

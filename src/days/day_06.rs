@@ -110,9 +110,19 @@ const N: usize = 130;
 pub fn day_06() -> Result<()> {
     println!("Happy Nikolaus!");
     let input = include_str!("../../assets/day_06.txt");
+
+    #[cfg(feature = "long-run-time")]
     let mut challenge = Day06Data::<N>::from(input);
 
+    #[cfg(not(feature = "long-run-time"))]
+    let challenge = Day06Data::<N>::from(input);
+
+    #[cfg(feature = "long-run-time")]
     let (result_part1, path) = challenge.count_visited_map_tiles();
+
+    #[cfg(not(feature = "long-run-time"))]
+    let (result_part1, _) = challenge.count_visited_map_tiles();
+
     println!("result day 06 part 1: {}", result_part1);
     assert_eq!(result_part1, 4_826);
 
