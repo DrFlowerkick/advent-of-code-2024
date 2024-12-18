@@ -2,7 +2,6 @@
 
 use anyhow::Result;
 use regex::Regex;
-use std::collections::HashMap;
 
 #[derive(Debug)]
 enum Instruction {
@@ -72,13 +71,15 @@ impl Instruction {
     fn apply(&self, reg: &mut Registers, out: &mut Vec<String>) -> Option<usize> {
         match self {
             Instruction::Adv(op) => {
-                reg.a >>= reg.combo_operator(*op); //2_u128.pow(reg.combo_operator(*op));
+                // is equal to: reg.a /= 2_u128.pow(reg.combo_operator(*op));
+                reg.a >>= reg.combo_operator(*op);
             }
             Instruction::Bxl(op) => {
                 reg.b ^= op;
             }
             Instruction::Bst(op) => {
-                reg.b = reg.combo_operator(*op) % 8;
+                // is equal to: reg.b = reg.combo_operator(*op) % 8;
+                reg.b = reg.combo_operator(*op) & 7;
             }
             Instruction::Jnz(op) => {
                 if reg.a != 0 {
@@ -89,14 +90,17 @@ impl Instruction {
                 reg.b ^= reg.c;
             }
             Instruction::Out(op) => {
-                let op_mod = reg.combo_operator(*op) % 8;
+                // is equal to: op_mod = reg.combo_operator(*op) % 8;
+                let op_mod = reg.combo_operator(*op) & 7;
                 out.push(op_mod.to_string());
             }
             Instruction::Bdv(op) => {
-                reg.b = reg.a >> reg.combo_operator(*op); // / 2_u128.pow(reg.combo_operator(*op));
+                // is equal to: reg.b = reg.a / 2_u128.pow(reg.combo_operator(*op));
+                reg.b = reg.a >> reg.combo_operator(*op);
             }
             Instruction::Cdv(op) => {
-                reg.c = reg.a >> reg.combo_operator(*op); // / 2_u128.pow(reg.combo_operator(*op));
+                // is equal to: reg.c = reg.a / 2_u128.pow(reg.combo_operator(*op));
+                reg.c = reg.a >> reg.combo_operator(*op);
             }
         }
         None
@@ -196,24 +200,13 @@ impl Day17Data {
     // the back and reverse the process above
     fn reverse_solution(&self) -> u128 {
         let min_a = u128::MAX;
-        let mut cache: HashMap<(usize, u128), Option<u128>> = HashMap::new();
-        if let Some(final_a) = self.recursive_solver(self.part_2.len() - 1, 0, &mut cache, min_a) {
+        if let Some(final_a) = self.recursive_solver(self.part_2.len() - 1, 0, min_a) {
             final_a
         } else {
             panic!("No Solution!");
         }
     }
-    fn recursive_solver(
-        &self,
-        index: usize,
-        a: u128,
-        cache: &mut HashMap<(usize, u128), Option<u128>>,
-        mut min_a: u128,
-    ) -> Option<u128> {
-        // check if current situation is already in cache
-        if let Some(cached_a) = cache.get(&(index, a)) {
-            return *cached_a;
-        }
+    fn recursive_solver(&self, index: usize, a: u128, mut min_a: u128) -> Option<u128> {
         let out = self.part_2[index];
         let new_a = a << 3;
         let mut is_solved = false;
@@ -228,25 +221,17 @@ impl Day17Data {
                     // end of recursive call
                     if new_a < min_a {
                         is_solved = true;
-                        cache.insert((index, a), Some(new_a));
                         min_a = new_a;
                     }
-                } else if let Some(final_a) = self.recursive_solver(index - 1, new_a, cache, min_a)
-                {
+                } else if let Some(final_a) = self.recursive_solver(index - 1, new_a, min_a) {
                     if final_a < min_a {
                         is_solved = true;
-                        cache.insert((index, a), Some(final_a));
                         min_a = final_a;
                     }
                 }
             }
         }
-        if is_solved {
-            Some(min_a)
-        } else {
-            cache.insert((index, a), None);
-            None
-        }
+        is_solved.then_some(min_a)
     }
 }
 
