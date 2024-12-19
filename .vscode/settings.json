@@ -28,6 +28,8 @@
         "day_04_example.txt",
         "**/mylib/**",
         "day_12_example_01.txt",
-        "day_12_example_02.txt"
+        "day_12_example_02.txt",
+        "day_19_example.txt",
+        "day_19.txt"
     ],
 }
