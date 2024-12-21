@@ -7,23 +7,8 @@ use std::collections::HashMap;
 #[derive(Debug)]
 struct KeyPad {
     keys: HashMap<Point, char>,
-    keys: HashMap<Point, char>,
 }
 
-impl KeyPad {
-    fn new_num_pad() -> Self {
-        let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
-        keys.insert((0, 0).into(), '7');
-        keys.insert((1, 0).into(), '8');
-        keys.insert((2, 0).into(), '9');
-        keys.insert((0, 1).into(), '4');
-        keys.insert((1, 1).into(), '5');
-        keys.insert((2, 1).into(), '6');
-        keys.insert((0, 2).into(), '1');
-        keys.insert((1, 2).into(), '2');
-        keys.insert((2, 2).into(), '3');
-        keys.insert((1, 3).into(), '0');
-        keys.insert((2, 3).into(), 'A');
 impl KeyPad {
     fn new_num_pad() -> Self {
         let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
@@ -88,7 +73,6 @@ impl KeyPad {
                 sequences.push(sequence);
             }
         }
-        sequences
         sequences
     }
 }
@@ -189,19 +173,6 @@ mod tests {
 
     #[test]
     fn test_key_strokes() {
-        let num_pad = KeyPad::new_num_pad();
-        assert_eq!(num_pad.key_strokes('A', '0'), ["<A"]);
-        assert_eq!(num_pad.key_strokes('0', '9').len(), 4);
-        assert_eq!(num_pad.key_strokes('1', '0'), [">vA"]);
-        assert_eq!(num_pad.key_strokes('0', '1'), ["^<A"]);
-        let from_7_to_a = num_pad.key_strokes('7', 'A').len();
-        assert_eq!(from_7_to_a, 9);
-        assert_eq!(num_pad.key_strokes('A', '7').len(), from_7_to_a);
-        assert_eq!(num_pad.key_strokes('0', '0'), ["A"]);
-
-        let dir_pad = KeyPad::new_dir_pad();
-        assert_eq!(dir_pad.key_strokes('<', '^'), [">^A"]);
-        assert_eq!(dir_pad.key_strokes('^', '<'), ["v<A"]);
         let num_pad = KeyPad::new_num_pad();
         assert_eq!(num_pad.key_strokes('A', '0'), ["<A"]);
         assert_eq!(num_pad.key_strokes('0', '9').len(), 4);
