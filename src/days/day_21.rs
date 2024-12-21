@@ -2,13 +2,28 @@
 
 use anyhow::Result;
 use my_lib::my_geometry::my_point::Point;
-use std::collections::{HashMap, hash_map::Entry};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 struct KeyPad {
     keys: HashMap<Point, char>,
+    keys: HashMap<Point, char>,
 }
 
+impl KeyPad {
+    fn new_num_pad() -> Self {
+        let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
+        keys.insert((0, 0).into(), '7');
+        keys.insert((1, 0).into(), '8');
+        keys.insert((2, 0).into(), '9');
+        keys.insert((0, 1).into(), '4');
+        keys.insert((1, 1).into(), '5');
+        keys.insert((2, 1).into(), '6');
+        keys.insert((0, 2).into(), '1');
+        keys.insert((1, 2).into(), '2');
+        keys.insert((2, 2).into(), '3');
+        keys.insert((1, 3).into(), '0');
+        keys.insert((2, 3).into(), 'A');
 impl KeyPad {
     fn new_num_pad() -> Self {
         let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
@@ -71,9 +86,9 @@ impl KeyPad {
             for sub_sequence in self.key_strokes_recursive(new_from, to).iter() {
                 let sequence = dir_char.to_string() + sub_sequence;
                 sequences.push(sequence);
-
             }
         }
+        sequences
         sequences
     }
 }
@@ -81,12 +96,9 @@ impl KeyPad {
 #[derive(Debug)]
 struct Day21Data {
     codes: Vec<String>,
+    dir_robots: usize,
     num_pad: KeyPad,
     dir_pad: KeyPad,
-    cache_key_strokes: HashMap<(char, char), Vec<String>>,
-    cache_num_pad: HashMap<(char, char), String>,
-    cache_radiation_dir_pad: HashMap<(char, char), String>,
-    cache_frozen_dir_pad: HashMap<(char, char), String>,
 }
 
 impl From<&str> for Day21Data {
@@ -94,113 +106,79 @@ impl From<&str> for Day21Data {
         let codes: Vec<String> = value.lines().map(|l| l.to_owned()).collect();
         Self {
             codes,
+            dir_robots: 2,
             num_pad: KeyPad::new_num_pad(),
-            dir_pad: KeyPad::new_num_pad(),
-            cache_key_strokes: HashMap::new(),
-            cache_num_pad: HashMap::new(),
-            cache_radiation_dir_pad: HashMap::new(),
-            cache_frozen_dir_pad: HashMap::new(),
+            dir_pad: KeyPad::new_dir_pad(),
         }
     }
 }
 
 impl Day21Data {
-    fn calc_complexities(&mut self) -> usize {
+    fn calc_complexities(&mut self, dir_robots: usize) -> usize {
         let codes = self.codes.to_owned();
         let mut complexities = 0;
+        let mut cache: HashMap<(char, char, usize), usize> = HashMap::new();
+        self.dir_robots = dir_robots;
         for code in codes.iter() {
-            let sequence = self.get_num_pad_sequence(&code);
-            dbg!(code);
-            dbg!(&sequence);
+            let sequence_len = self.get_key_pad_sequence(code, &mut cache, 0);
             let num_value: usize = code[..3].parse::<usize>().unwrap();
-            complexities += sequence.len() * num_value;
-            dbg!(sequence.len() * num_value);
+            complexities += sequence_len * num_value;
         }
         complexities
     }
-    fn get_num_pad_sequence(&mut self, code: &str) -> String {
-        let mut sequence = String::new();
+    fn get_key_pad_sequence(
+        &self,
+        code: &str,
+        cache: &mut HashMap<(char, char, usize), usize>,
+        level: usize,
+    ) -> usize {
+        let mut sequence_len = 0;
         let mut previous_key = 'A';
         for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_num_pad.get(&(previous_key, key)) {
-                sequence += cached_sequence;
+            if let Some(cached_len) = cache.get(&(previous_key, key, level)) {
+                sequence_len += cached_len;
                 previous_key = key;
                 continue;
             }
-            let possible_path_sequences = self.num_pad.key_strokes(previous_key, key);
-            let possible_sequences: Vec<String> = possible_path_sequences.iter()
-            .map(|path| self.get_radiation_dir_pad_sequence(path))
-            .collect();
-            let subsequence = possible_sequences.iter().min_by_key(|s| s.len()).unwrap().to_owned();
-            sequence += &subsequence;
-            self.cache_num_pad.insert((previous_key, key), subsequence);
-        }
-        sequence
-    }
-    fn get_radiation_dir_pad_sequence(&mut self, code: &str) -> String {
-        let mut sequence = String::new();
-        let mut previous_key = 'A';
-        for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_radiation_dir_pad.get(&(previous_key, key)) {
-                //println!("fc bot: {}", cached_sequence);
-                sequence += cached_sequence;
-                previous_key = key;
-                continue;
-            }
-            todo!();/*
-            let frozen_bot_sequence = self.get_key_strokes(keypad, previous_key, key);
-            //println!("f  bot: {}", frozen_bot_sequence);
-            let key_sequence = self.get_frozen_dir_pad_sequence(keypad, &frozen_bot_sequence);
-            sequence += &key_sequence;
-            self.cache_radiation_dir_pad
-                .insert((previous_key, key), key_sequence);
-            previous_key = key;
-            */
-        }
-        sequence
-    }
-    fn get_frozen_dir_pad_sequence(&mut self, code: &str) -> String {
-        let mut sequence = String::new();
-        let mut previous_key = 'A';
-        for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_frozen_dir_pad.get(&(previous_key, key)) {
-                sequence += cached_sequence;
-                previous_key = key;
-            }
-            let key_sequences = self.get_key_strokes(true, previous_key, key);
-            
-            previous_key = key;
-        }
-        sequence
-    }
-    fn get_key_strokes(&mut self, dir_pad: bool, from: char, to: char) -> Vec<String> {
-        if let Some(cached_key_strokes) = self.cache_key_strokes.get(&(from, to)) {
-            cached_key_strokes.to_owned()
-        } else {
-            let key_strokes = if dir_pad {
-                self.dir_pad.key_strokes(from, to)
+            let possible_key_strokes = if level == 0 {
+                self.num_pad.key_strokes(previous_key, key)
             } else {
-                self.num_pad.key_strokes(from, to)
+                self.dir_pad.key_strokes(previous_key, key)
             };
-            self.cache_key_strokes
-                .insert((from, to), key_strokes.clone());
-            key_strokes
+            let sub_sequence_len = if level == self.dir_robots {
+                possible_key_strokes
+                    .iter()
+                    .map(|ks| ks.len())
+                    .min()
+                    .unwrap()
+            } else {
+                let mut min_len = usize::MAX;
+                for key_strokes in possible_key_strokes.iter() {
+                    let recursive_len = self.get_key_pad_sequence(key_strokes, cache, level + 1);
+                    min_len = min_len.min(recursive_len);
+                }
+                min_len
+            };
+            sequence_len += sub_sequence_len;
+            cache.insert((previous_key, key, level), sub_sequence_len);
+            previous_key = key;
         }
+        sequence_len
     }
 }
 
 pub fn day_21() -> Result<()> {
     let input = include_str!("../../assets/day_21.txt");
-    let _challenge = Day21Data::from(input);
-    /*
-    let result_part1 = challenge
-    println!("result day 21 part 1: {}", result_part1);
-    assert_eq!(result_part1, XXX);
+    let mut challenge = Day21Data::from(input);
 
-    let result_part2 = challenge
+    let result_part1 = challenge.calc_complexities(2);
+    println!("result day 21 part 1: {}", result_part1);
+    assert_eq!(result_part1, 197_560);
+
+    let result_part2 = challenge.calc_complexities(25);
     println!("result day 21 part 2: {}", result_part2);
-    assert_eq!(result_part2, XXX);
-    */
+    assert_eq!(result_part2, 242_337_182_910_752);
+
     Ok(())
 }
 
@@ -224,6 +202,19 @@ mod tests {
         let dir_pad = KeyPad::new_dir_pad();
         assert_eq!(dir_pad.key_strokes('<', '^'), [">^A"]);
         assert_eq!(dir_pad.key_strokes('^', '<'), ["v<A"]);
+        let num_pad = KeyPad::new_num_pad();
+        assert_eq!(num_pad.key_strokes('A', '0'), ["<A"]);
+        assert_eq!(num_pad.key_strokes('0', '9').len(), 4);
+        assert_eq!(num_pad.key_strokes('1', '0'), [">vA"]);
+        assert_eq!(num_pad.key_strokes('0', '1'), ["^<A"]);
+        let from_7_to_a = num_pad.key_strokes('7', 'A').len();
+        assert_eq!(from_7_to_a, 9);
+        assert_eq!(num_pad.key_strokes('A', '7').len(), from_7_to_a);
+        assert_eq!(num_pad.key_strokes('0', '0'), ["A"]);
+
+        let dir_pad = KeyPad::new_dir_pad();
+        assert_eq!(dir_pad.key_strokes('<', '^'), [">^A"]);
+        assert_eq!(dir_pad.key_strokes('^', '<'), ["v<A"]);
     }
 
     #[test]
@@ -231,7 +222,7 @@ mod tests {
         let input = include_str!("../../assets/day_21_example.txt");
         let mut challenge = Day21Data::from(input);
 
-        let result_part1 = challenge.calc_complexities();
+        let result_part1 = challenge.calc_complexities(2);
         println!("result day 21 part 1: {}", result_part1);
         assert_eq!(result_part1, 126_384);
         /*
