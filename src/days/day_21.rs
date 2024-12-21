@@ -1,8 +1,8 @@
 //!day_21.rs
 
 use anyhow::Result;
-use std::collections::HashMap;
 use my_lib::my_geometry::my_point::Point;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 struct KeyPad {
@@ -71,7 +71,6 @@ impl KeyPad {
             for sub_sequence in self.key_strokes_recursive(new_from, to).iter() {
                 let sequence = dir_char.to_string() + sub_sequence;
                 sequences.push(sequence);
-
             }
         }
         sequences
@@ -82,6 +81,8 @@ impl KeyPad {
 struct Day21Data {
     codes: Vec<String>,
     dir_robots: usize,
+    num_pad: KeyPad,
+    dir_pad: KeyPad,
 }
 
 impl From<&str> for Day21Data {
@@ -90,19 +91,20 @@ impl From<&str> for Day21Data {
         Self {
             codes,
             dir_robots: 2,
+            num_pad: KeyPad::new_num_pad(),
+            dir_pad: KeyPad::new_dir_pad(),
         }
     }
 }
 
 impl Day21Data {
     fn calc_complexities(&mut self, dir_robots: usize) -> usize {
-        let keypad = KeyPad::default();
         let codes = self.codes.to_owned();
         let mut complexities = 0;
         let mut cache: HashMap<(char, char, usize), usize> = HashMap::new();
         self.dir_robots = dir_robots;
         for code in codes.iter() {
-            let sequence_len = self.get_key_pad_sequence(&keypad, &code, &mut cache, 0);
+            let sequence_len = self.get_key_pad_sequence(code, &mut cache, 0);
             let num_value: usize = code[..3].parse::<usize>().unwrap();
             complexities += sequence_len * num_value;
         }
@@ -110,24 +112,36 @@ impl Day21Data {
     }
     fn get_key_pad_sequence(
         &self,
-        keypad: &KeyPad,
         code: &str,
         cache: &mut HashMap<(char, char, usize), usize>,
         level: usize,
     ) -> usize {
         let mut sequence_len = 0;
-        let mut previous_key = if level == 0 { 'A' } else { 'a' };
+        let mut previous_key = 'A';
         for key in code.chars() {
             if let Some(cached_len) = cache.get(&(previous_key, key, level)) {
                 sequence_len += cached_len;
                 previous_key = key;
                 continue;
             }
-            let key_strokes = keypad.key_strokes(previous_key, key);
-            let sub_sequence_len = if level == self.dir_robots {
-                key_strokes.len()
+            let possible_key_strokes = if level == 0 {
+                self.num_pad.key_strokes(previous_key, key)
             } else {
-                self.get_key_pad_sequence(keypad, &key_strokes, cache, level + 1)
+                self.dir_pad.key_strokes(previous_key, key)
+            };
+            let sub_sequence_len = if level == self.dir_robots {
+                possible_key_strokes
+                    .iter()
+                    .map(|ks| ks.len())
+                    .min()
+                    .unwrap()
+            } else {
+                let mut min_len = usize::MAX;
+                for key_strokes in possible_key_strokes.iter() {
+                    let recursive_len = self.get_key_pad_sequence(key_strokes, cache, level + 1);
+                    min_len = min_len.min(recursive_len);
+                }
+                min_len
             };
             sequence_len += sub_sequence_len;
             cache.insert((previous_key, key, level), sub_sequence_len);
@@ -144,11 +158,11 @@ pub fn day_21() -> Result<()> {
     let result_part1 = challenge.calc_complexities(2);
     println!("result day 21 part 1: {}", result_part1);
     assert_eq!(result_part1, 197_560);
-    
+
     let result_part2 = challenge.calc_complexities(25);
     println!("result day 21 part 2: {}", result_part2);
-    //assert_eq!(result_part2, XXX);
-    
+    assert_eq!(result_part2, 242_337_182_910_752);
+
     Ok(())
 }
 
@@ -159,13 +173,19 @@ mod tests {
 
     #[test]
     fn test_key_strokes() {
-        let key_pad = KeyPad::default();
-        assert_eq!(key_pad.key_strokes('A', '0'), "<a");
-        assert_eq!(key_pad.key_strokes('0', '9'), ">^^^a");
-        assert_eq!(key_pad.key_strokes('1', '0'), ">va");
-        assert_eq!(key_pad.key_strokes('0', '1'), "^<a");
-        assert_eq!(key_pad.key_strokes('<', '^'), ">^a");
-        assert_eq!(key_pad.key_strokes('^', '<'), "v<a");
+        let num_pad = KeyPad::new_num_pad();
+        assert_eq!(num_pad.key_strokes('A', '0'), ["<A"]);
+        assert_eq!(num_pad.key_strokes('0', '9').len(), 4);
+        assert_eq!(num_pad.key_strokes('1', '0'), [">vA"]);
+        assert_eq!(num_pad.key_strokes('0', '1'), ["^<A"]);
+        let from_7_to_a = num_pad.key_strokes('7', 'A').len();
+        assert_eq!(from_7_to_a, 9);
+        assert_eq!(num_pad.key_strokes('A', '7').len(), from_7_to_a);
+        assert_eq!(num_pad.key_strokes('0', '0'), ["A"]);
+
+        let dir_pad = KeyPad::new_dir_pad();
+        assert_eq!(dir_pad.key_strokes('<', '^'), [">^A"]);
+        assert_eq!(dir_pad.key_strokes('^', '<'), ["v<A"]);
     }
 
     #[test]
