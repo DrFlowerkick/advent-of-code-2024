@@ -6,54 +6,75 @@ use my_lib::my_geometry::my_point::Point;
 
 #[derive(Debug)]
 struct KeyPad {
-    keys: HashMap<char, Point>,
+    keys: HashMap<Point, char>,
 }
 
 impl KeyPad {
     fn new_num_pad() -> Self {
-        let mut keys: HashMap<char, Point> = HashMap::with_capacity(11);
-        keys.insert('7', (0, 0).into());
-        keys.insert('8', (1, 0).into());
-        keys.insert('9', (2, 0).into());
-        keys.insert('4', (0, 1).into());
-        keys.insert('5', (1, 1).into());
-        keys.insert('6', (2, 1).into());
-        keys.insert('1', (0, 2).into());
-        keys.insert('2', (1, 2).into());
-        keys.insert('3', (2, 2).into());
-        keys.insert('0', (1, 3).into());
-        keys.insert('A', (2, 3).into());
+        let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
+        keys.insert((0, 0).into(), '7');
+        keys.insert((1, 0).into(), '8');
+        keys.insert((2, 0).into(), '9');
+        keys.insert((0, 1).into(), '4');
+        keys.insert((1, 1).into(), '5');
+        keys.insert((2, 1).into(), '6');
+        keys.insert((0, 2).into(), '1');
+        keys.insert((1, 2).into(), '2');
+        keys.insert((2, 2).into(), '3');
+        keys.insert((1, 3).into(), '0');
+        keys.insert((2, 3).into(), 'A');
         Self { keys }
     }
     fn new_dir_pad() -> Self {
-        let mut keys: HashMap<char, Point> = HashMap::with_capacity(5);
-        keys.insert('^', (1, 0).into());
-        keys.insert('a', (2, 0).into());
-        keys.insert('<', (0, 1).into());
-        keys.insert('v', (1, 1).into());
-        keys.insert('>', (2, 1).into());
+        let mut keys: HashMap<Point, char> = HashMap::with_capacity(5);
+        keys.insert((1, 0).into(), '^');
+        keys.insert((2, 0).into(), 'A');
+        keys.insert((0, 1).into(), '<');
+        keys.insert((1, 1).into(), 'v');
+        keys.insert((2, 1).into(), '>');
         Self { keys }
     }
     fn key_strokes(&self, from: char, to: char) -> Vec<String> {
-        let from_pos = self.keys.get(&from).unwrap();
-        let to_pos = self.keys.get(&to).unwrap();
-        let 
-        [(Point::new(0, -1), '^'), (Point::new(0, 1), 'v'), (Point::new(-1, 0), '<'), (Point::new(1, 0), '>')].iter()
-
-
-
-        let delta_x = to_pos.0 - from_pos.0;
-        let dir_char = if delta_x > 0 { ">" } else { "<" };
-        let dir_x = dir_char.to_string().repeat(delta_x.abs() as usize);
-        let delta_y = to_pos.1 - from_pos.1;
-        // y goes from top to bottom!
-        let dir_char = if delta_y < 0 { "^" } else { "v" };
-        let dir_y = dir_char.to_string().repeat(delta_y.abs() as usize);
-        if (from_pos.1 == 3 && to_pos.0 == 0) || (to == '<' && from_pos.1 == 0) {
-            format!("{}{}a", dir_y, dir_x)
-        } else {
-            format!("{}{}a", dir_x, dir_y)
+        if from == to {
+            return vec!["A".into()];
         }
+        let from_pos = self
+            .keys
+            .iter()
+            .find(|(_, v)| **v == from)
+            .map(|(k, _)| *k)
+            .unwrap();
+        let to_pos = self
+            .keys
+            .iter()
+            .find(|(_, v)| **v == to)
+            .map(|(k, _)| *k)
+            .unwrap();
+        self.key_strokes_recursive(from_pos, to_pos)
+    }
+    fn key_strokes_recursive(&self, from: Point, to: Point) -> Vec<String> {
+        if from == to {
+            return vec!["A".into()];
+        }
+        let new_delta = from.delta(to) - 1;
+        let mut sequences: Vec<String> = Vec::new();
+        for (new_from, dir_char) in [
+            (Point::new(0, -1), "^"),
+            (Point::new(1, 0), ">"),
+            (Point::new(0, 1), "v"),
+            (Point::new(-1, 0), "<"),
+        ]
+        .iter()
+        .map(|(p, d)| (p.add(from), d))
+        .filter(|(p, _)| self.keys.contains_key(p) && p.delta(to) == new_delta)
+        {
+            for sub_sequence in self.key_strokes_recursive(new_from, to).iter() {
+                let sequence = dir_char.to_string() + sub_sequence;
+                sequences.push(sequence);
+
+            }
+        }
+        sequences
     }
 }
 
