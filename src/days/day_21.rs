@@ -120,62 +120,56 @@ impl Day21Data {
     }
     fn get_num_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
-        let mut previous_char = 'A';
+        let mut previous_key = 'A';
         for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_num_pad.get(&(previous_char, key)) {
-                //println!("rc bot: {}", cached_sequence);
+            if let Some(cached_sequence) = self.cache_num_pad.get(&(previous_key, key)) {
                 sequence += cached_sequence;
-                previous_char = key;
+                previous_key = key;
                 continue;
             }
-            todo!();/*
-            let radiation_bot_sequence = self.get_key_strokes(keypad, previous_char, key);
-            //println!("r  bot: {}", radiation_bot_sequence);
-            let key_sequence = self.get_radiation_dir_pad_sequence(keypad, &radiation_bot_sequence);
-            sequence += &key_sequence;
-            if (previous_char, key) == ('3', '7') {
-                println!("('3', '7'): {}", key_sequence);
-            }
-            self.cache_num_pad
-                .insert((previous_char, key), key_sequence);
-            previous_char = key;
-            */
+            let possible_path_sequences = self.num_pad.key_strokes(previous_key, key);
+            let possible_sequences: Vec<String> = possible_path_sequences.iter()
+            .map(|path| self.get_radiation_dir_pad_sequence(path))
+            .collect();
+            let subsequence = possible_sequences.iter().min_by_key(|s| s.len()).unwrap().to_owned();
+            sequence += &subsequence;
+            self.cache_num_pad.insert((previous_key, key), subsequence);
         }
         sequence
     }
     fn get_radiation_dir_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
-        let mut previous_char = 'A';
+        let mut previous_key = 'A';
         for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_radiation_dir_pad.get(&(previous_char, key)) {
+            if let Some(cached_sequence) = self.cache_radiation_dir_pad.get(&(previous_key, key)) {
                 //println!("fc bot: {}", cached_sequence);
                 sequence += cached_sequence;
-                previous_char = key;
+                previous_key = key;
                 continue;
             }
             todo!();/*
-            let frozen_bot_sequence = self.get_key_strokes(keypad, previous_char, key);
+            let frozen_bot_sequence = self.get_key_strokes(keypad, previous_key, key);
             //println!("f  bot: {}", frozen_bot_sequence);
             let key_sequence = self.get_frozen_dir_pad_sequence(keypad, &frozen_bot_sequence);
             sequence += &key_sequence;
             self.cache_radiation_dir_pad
-                .insert((previous_char, key), key_sequence);
-            previous_char = key;
+                .insert((previous_key, key), key_sequence);
+            previous_key = key;
             */
         }
         sequence
     }
     fn get_frozen_dir_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
-        let mut previous_char = 'A';
+        let mut previous_key = 'A';
         for key in code.chars() {
-            if let Some(cached_sequence) = self.cache_frozen_dir_pad.get(&(previous_char, key)) {
+            if let Some(cached_sequence) = self.cache_frozen_dir_pad.get(&(previous_key, key)) {
                 sequence += cached_sequence;
-                previous_char = key;
+                previous_key = key;
             }
-            let key_sequences = self.get_key_strokes(true, previous_char, key);
+            let key_sequences = self.get_key_strokes(true, previous_key, key);
             
-            previous_char = key;
+            previous_key = key;
         }
         sequence
     }
