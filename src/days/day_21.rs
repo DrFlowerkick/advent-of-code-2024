@@ -1,112 +1,92 @@
 //!day_21.rs
 
 use anyhow::Result;
-use std::collections::HashMap;
+use my_lib::my_geometry::my_point::Point;
+use std::collections::{HashMap, hash_map::Entry};
 
 #[derive(Debug)]
 struct KeyPad {
-    keys: HashMap<char, (i32, i32)>,
-}
-
-impl Default for KeyPad {
-    fn default() -> Self {
-        let mut keys: HashMap<char, (i32, i32)> = HashMap::with_capacity(16);
-        keys.insert('7', (0, 0));
-        keys.insert('8', (1, 0));
-        keys.insert('9', (2, 0));
-        keys.insert('4', (0, 1));
-        keys.insert('5', (1, 1));
-        keys.insert('6', (2, 1));
-        keys.insert('1', (0, 2));
-        keys.insert('2', (1, 2));
-        keys.insert('3', (2, 2));
-        keys.insert('0', (1, 3));
-        keys.insert('A', (2, 3));
-        keys.insert('^', (1, 0));
-        keys.insert('a', (2, 0));
-        keys.insert('<', (0, 1));
-        keys.insert('v', (1, 1));
-        keys.insert('>', (2, 1));
-        Self { keys }
-    }
+    keys: HashMap<Point, char>,
 }
 
 impl KeyPad {
-    fn key_strokes(&self, from: char, to: char) -> String {
-        let from_pos = self.keys.get(&from).unwrap();
-        let to_pos = self.keys.get(&to).unwrap();
-        let delta_x = to_pos.0 - from_pos.0;
-        let dir_char = if delta_x > 0 { '>' } else { '<' };
-        let dir_x: Vec<char> = vec![dir_char; delta_x.abs() as usize];
-        let delta_y = to_pos.1 - from_pos.1;
-        // y goes from top to bottom!
-        let dir_char = if delta_y < 0 { '^' } else { 'v' };
-        let dir_y: Vec<char> = vec![dir_char; delta_y.abs() as usize];
-        let mut sequence = String::new();
-        let mut index_x = 0;
-        let mut index_y = 0;
-        let mut current = from;
-        loop {
-            if index_x < dir_x.len() {
-                if let Some(new_from) = self.key_from_dir(current, dir_x[index_x]) {
-                    sequence.push(dir_x[index_x]);
-                    current = new_from;
-                    index_x += 1;
-                    continue;
-                }
-            }
-            if index_y < dir_y.len() {
-                if let Some(new_from) = self.key_from_dir(current, dir_y[index_y]) {
-                    sequence.push(dir_y[index_y]);
-                    current = new_from;
-                    index_y += 1;
-                    continue;
-                }
-            }
-            if index_x == dir_x.len() && index_y == dir_y.len() {
-                return sequence + "a";
-            }
-            panic!("Unexpected sequence error from '{}' to '{}' (dir_x: {:?}, dir_y:{:?}", from, to, dir_x, dir_y);
-        }
-        /*
-        if from.0 == 0 {
-            format!("{}{}a", dir_x, dir_y)
-        } else {
-            format!("{}{}a", dir_y, dir_x)
-        } */
+    fn new_num_pad() -> Self {
+        let mut keys: HashMap<Point, char> = HashMap::with_capacity(11);
+        keys.insert((0, 0).into(), '7');
+        keys.insert((1, 0).into(), '8');
+        keys.insert((2, 0).into(), '9');
+        keys.insert((0, 1).into(), '4');
+        keys.insert((1, 1).into(), '5');
+        keys.insert((2, 1).into(), '6');
+        keys.insert((0, 2).into(), '1');
+        keys.insert((1, 2).into(), '2');
+        keys.insert((2, 2).into(), '3');
+        keys.insert((1, 3).into(), '0');
+        keys.insert((2, 3).into(), 'A');
+        Self { keys }
     }
-    fn key_from_dir(&self, from: char, dir: char) -> Option<char> {
-        let dir = match dir {
-            '^' => (0, -1),
-            '<' => (-1, 0),
-            'v' => (0, 1),
-            '>' => (1, 0),
-            _ => panic!("unexpected dir."),
-        };
-        let num_pad = "0123456789A";
-        let dir_pad = "^<v>a";
-        let is_num_pad = num_pad.contains(from);
-        if let Some(pos) = self.keys.get(&from) {
-            let new_pos = (pos.0 + dir.0, pos.1 + dir.1);
-            return self
-                .keys
-                .iter()
-                .find(|(k, v)| {
-                    **v == new_pos && ((is_num_pad && num_pad.contains(**k))
-                        || (!is_num_pad && dir_pad.contains(**k)))
-                })
-                .map(|(k, _)| *k);
+    fn new_dir_pad() -> Self {
+        let mut keys: HashMap<Point, char> = HashMap::with_capacity(5);
+        keys.insert((1, 0).into(), '^');
+        keys.insert((2, 0).into(), 'A');
+        keys.insert((0, 1).into(), '<');
+        keys.insert((1, 1).into(), 'v');
+        keys.insert((2, 1).into(), '>');
+        Self { keys }
+    }
+    fn key_strokes(&self, from: char, to: char) -> Vec<String> {
+        if from == to {
+            return vec!["A".into()];
         }
-        None
+        let from_pos = self
+            .keys
+            .iter()
+            .find(|(_, v)| **v == from)
+            .map(|(k, _)| *k)
+            .unwrap();
+        let to_pos = self
+            .keys
+            .iter()
+            .find(|(_, v)| **v == to)
+            .map(|(k, _)| *k)
+            .unwrap();
+        self.key_strokes_recursive(from_pos, to_pos)
+    }
+    fn key_strokes_recursive(&self, from: Point, to: Point) -> Vec<String> {
+        if from == to {
+            return vec!["A".into()];
+        }
+        let new_delta = from.delta(to) - 1;
+        let mut sequences: Vec<String> = Vec::new();
+        for (new_from, dir_char) in [
+            (Point::new(0, -1), "^"),
+            (Point::new(1, 0), ">"),
+            (Point::new(0, 1), "v"),
+            (Point::new(-1, 0), "<"),
+        ]
+        .iter()
+        .map(|(p, d)| (p.add(from), d))
+        .filter(|(p, _)| self.keys.contains_key(p) && p.delta(to) == new_delta)
+        {
+            for sub_sequence in self.key_strokes_recursive(new_from, to).iter() {
+                let sequence = dir_char.to_string() + sub_sequence;
+                sequences.push(sequence);
+
+            }
+        }
+        sequences
     }
 }
 
 #[derive(Debug)]
 struct Day21Data {
     codes: Vec<String>,
-    cache_key_strokes: HashMap<(char, char), String>,
+    num_pad: KeyPad,
+    dir_pad: KeyPad,
+    cache_key_strokes: HashMap<(char, char), Vec<String>>,
     cache_num_pad: HashMap<(char, char), String>,
     cache_radiation_dir_pad: HashMap<(char, char), String>,
+    cache_frozen_dir_pad: HashMap<(char, char), String>,
 }
 
 impl From<&str> for Day21Data {
@@ -114,20 +94,22 @@ impl From<&str> for Day21Data {
         let codes: Vec<String> = value.lines().map(|l| l.to_owned()).collect();
         Self {
             codes,
+            num_pad: KeyPad::new_num_pad(),
+            dir_pad: KeyPad::new_num_pad(),
             cache_key_strokes: HashMap::new(),
             cache_num_pad: HashMap::new(),
             cache_radiation_dir_pad: HashMap::new(),
+            cache_frozen_dir_pad: HashMap::new(),
         }
     }
 }
 
 impl Day21Data {
     fn calc_complexities(&mut self) -> usize {
-        let keypad = KeyPad::default();
         let codes = self.codes.to_owned();
         let mut complexities = 0;
         for code in codes.iter() {
-            let sequence = self.get_num_pad_sequence(&keypad, &code);
+            let sequence = self.get_num_pad_sequence(&code);
             dbg!(code);
             dbg!(&sequence);
             let num_value: usize = code[..3].parse::<usize>().unwrap();
@@ -136,7 +118,7 @@ impl Day21Data {
         }
         complexities
     }
-    fn get_num_pad_sequence(&mut self, keypad: &KeyPad, code: &str) -> String {
+    fn get_num_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
         let mut previous_char = 'A';
         for key in code.chars() {
@@ -146,6 +128,7 @@ impl Day21Data {
                 previous_char = key;
                 continue;
             }
+            todo!();/*
             let radiation_bot_sequence = self.get_key_strokes(keypad, previous_char, key);
             //println!("r  bot: {}", radiation_bot_sequence);
             let key_sequence = self.get_radiation_dir_pad_sequence(keypad, &radiation_bot_sequence);
@@ -156,12 +139,13 @@ impl Day21Data {
             self.cache_num_pad
                 .insert((previous_char, key), key_sequence);
             previous_char = key;
+            */
         }
         sequence
     }
-    fn get_radiation_dir_pad_sequence(&mut self, keypad: &KeyPad, code: &str) -> String {
+    fn get_radiation_dir_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
-        let mut previous_char = 'a';
+        let mut previous_char = 'A';
         for key in code.chars() {
             if let Some(cached_sequence) = self.cache_radiation_dir_pad.get(&(previous_char, key)) {
                 //println!("fc bot: {}", cached_sequence);
@@ -169,6 +153,7 @@ impl Day21Data {
                 previous_char = key;
                 continue;
             }
+            todo!();/*
             let frozen_bot_sequence = self.get_key_strokes(keypad, previous_char, key);
             //println!("f  bot: {}", frozen_bot_sequence);
             let key_sequence = self.get_frozen_dir_pad_sequence(keypad, &frozen_bot_sequence);
@@ -176,25 +161,33 @@ impl Day21Data {
             self.cache_radiation_dir_pad
                 .insert((previous_char, key), key_sequence);
             previous_char = key;
+            */
         }
         sequence
     }
-    fn get_frozen_dir_pad_sequence(&mut self, keypad: &KeyPad, code: &str) -> String {
+    fn get_frozen_dir_pad_sequence(&mut self, code: &str) -> String {
         let mut sequence = String::new();
-        let mut previous_char = 'a';
+        let mut previous_char = 'A';
         for key in code.chars() {
-            let key_sequence = self.get_key_strokes(keypad, previous_char, key);
-            //println!("me    : {}", key_sequence);
-            sequence += &key_sequence;
+            if let Some(cached_sequence) = self.cache_frozen_dir_pad.get(&(previous_char, key)) {
+                sequence += cached_sequence;
+                previous_char = key;
+            }
+            let key_sequences = self.get_key_strokes(true, previous_char, key);
+            
             previous_char = key;
         }
         sequence
     }
-    fn get_key_strokes(&mut self, keypad: &KeyPad, from: char, to: char) -> String {
+    fn get_key_strokes(&mut self, dir_pad: bool, from: char, to: char) -> Vec<String> {
         if let Some(cached_key_strokes) = self.cache_key_strokes.get(&(from, to)) {
             cached_key_strokes.to_owned()
         } else {
-            let key_strokes = keypad.key_strokes(from, to);
+            let key_strokes = if dir_pad {
+                self.dir_pad.key_strokes(from, to)
+            } else {
+                self.num_pad.key_strokes(from, to)
+            };
             self.cache_key_strokes
                 .insert((from, to), key_strokes.clone());
             key_strokes
@@ -223,22 +216,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_key_from_dir() {
-        let key_pad = KeyPad::default();
-        assert_eq!(key_pad.key_from_dir('0', '<'), None);
-        assert_eq!(key_pad.key_from_dir('^', '<'), None);
-
-    }
-
-    #[test]
     fn test_key_strokes() {
-        let key_pad = KeyPad::default();
-        assert_eq!(key_pad.key_strokes('A', '0'), "<a");
-        assert_eq!(key_pad.key_strokes('0', '9'), ">^^^a");
-        assert_eq!(key_pad.key_strokes('1', '0'), ">va");
-        assert_eq!(key_pad.key_strokes('0', '1'), "^<a");
-        assert_eq!(key_pad.key_strokes('<', '^'), ">^a");
-        assert_eq!(key_pad.key_strokes('^', '<'), "v<a");
+        let num_pad = KeyPad::new_num_pad();
+        assert_eq!(num_pad.key_strokes('A', '0'), ["<A"]);
+        assert_eq!(num_pad.key_strokes('0', '9').len(), 4);
+        assert_eq!(num_pad.key_strokes('1', '0'), [">vA"]);
+        assert_eq!(num_pad.key_strokes('0', '1'), ["^<A"]);
+        let from_7_to_a = num_pad.key_strokes('7', 'A').len();
+        assert_eq!(from_7_to_a, 9);
+        assert_eq!(num_pad.key_strokes('A', '7').len(), from_7_to_a);
+        assert_eq!(num_pad.key_strokes('0', '0'), ["A"]);
+
+        let dir_pad = KeyPad::new_dir_pad();
+        assert_eq!(dir_pad.key_strokes('<', '^'), [">^A"]);
+        assert_eq!(dir_pad.key_strokes('^', '<'), ["v<A"]);
     }
 
     #[test]
