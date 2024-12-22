@@ -134,7 +134,7 @@ pub fn day_06() -> Result<()> {
     }
     #[cfg(not(feature = "long-run-time"))]
     {
-        println!("day 06 part 2 skipped because of long run time")
+        println!("day 06 part 2 skipped because of long run time");
     }
 
     Ok(())
