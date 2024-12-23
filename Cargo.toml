@@ -14,4 +14,5 @@ all = ["short-run-time", "long-run-time"]
 [dependencies]
 anyhow = "1.0.79"
 my_lib = { path = "../mylib" }
+petgraph = "0.6.5"
 regex = "1.11.1"
