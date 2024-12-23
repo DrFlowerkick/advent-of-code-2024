@@ -62,7 +62,7 @@ fn calc_secret(
     // multiplying the secret number by 2048 -> shift 11 bits to the left
     let shift_secret = new_secret << 11;
     // mix + prune (prune module 16777216 is equal to & (16777216 - 1), which is & (2^24 - 1), which is 24 true bits
-    new_secret = (shift_secret ^ new_secret) & (16_777_216 -1);
+    new_secret = (shift_secret ^ new_secret) & (16_777_216 - 1);
     cache.insert((secret, remaining_generations), new_secret);
 
     // Part 2

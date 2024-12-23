@@ -32,5 +32,6 @@ pub fn run() -> Result<()> {
     #[cfg(not(feature = "long-run-time"))]
     println!("day 22 skipped because of long run time");
     days::day_23::day_23()?;
+    days::day_24::day_24()?;
     Ok(())
 }
