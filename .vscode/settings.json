@@ -4,8 +4,11 @@
         "all"
     ],
     "cSpell.words": [
+        "bron",
         "crossterm",
         "Deque",
+        "graphmap",
+        "kerbosch",
         "MMSS",
         "MSSM",
         "MSVC",
@@ -15,6 +18,7 @@
         "mulwhy",
         "mylib",
         "Nikolaus",
+        "petgraph",
         "rustc",
         "rustup",
         "SMMS",
